@@ -1,0 +1,74 @@
+void LaserData()
+{
+   gStyle->SetOptFit(1111);//global variable
+   gStyle->SetMarkerStyle(20);
+   gStyle->SetMarkerColor(4);
+   gStyle->SetMarkerSize(1);
+   gStyle->SetHistLineColor(4);
+   gStyle->SetLineColor(4);
+   gStyle->SetLineWidth(3);
+
+   ifstream fin;
+   // const char* filename="/home/sunqn/work/Laser/StarLab/20190930_0944_11_D01_L_N01_test1.txt";
+   //const char* filename="/home/sunqn/work/Laser/StarLab/20190930_1025_13_D02_L_N01_test1.txt";
+   //const char* filename="/home/sunqn/work/Laser/StarLab/20190930_1116_13_D02_L_N02_test1.txt";
+   //const char* filename="/home/sunqn/work/Laser/StarLab/20190930_1315_13_D01_L_N02_test1.txt";
+
+   //const char* filename="/home/sunqn/work/Laser/StarLab/20190930_1413_13.7_D01_L_Y249_test1_3.06_550.txt";
+   //const char* filename="/home/sunqn/work/Laser/StarLab/20190930_1413_13.7_D02_L_Y249_test1_3.06_550.txt";
+   //const char* filename="/home/sunqn/work/Laser/StarLab/20190930_1535_14.2_D02_L_Y149_test1_3.02_545.txt";
+   //const char* filename="/home/sunqn/work/Laser/StarLab/20190930_1535_14.2_D01_L_Y149_test1_3.02_545.txt";
+   
+   //const char* filename="/home/sunqn/work/Laser/StarLab/20191001_1009_D02_L_Y149_3.02_545.txt";
+   //const char* filename="/home/sunqn/work/Laser/StarLab/20191001_1009_D01_L_Y149_3.02_545.txt";
+   
+   //const char* filename="/home/sunqn/work/Laser/StarLab/20191001_1922_D02_L_Y149_3.01_545_200us_temp.txt";
+   //const char* filename="/home/sunqn/work/Laser/StarLab/20190930_1535_14.2_D02_L_Y149_test1_3.02_545.txt";
+   const char* filename="/home/sunqn/work/Laser/StarLab/20190930_1535_14.2_D01_L_Y149_test1_3.02_545.txt";
+
+   fin.open(filename,std::ios::in);
+
+   TString ss(filename);
+   bool IsN2=ss.Contains("_N");
+   int n0=IsN2?37:36;
+   printf("Processing %s, n0=%d\n",filename,n0);
+   //return;
+
+   TGraph* gr=new TGraph();
+   gr->SetName("graph");
+   gr->SetTitle(";time since started [s];Intensity [uJ]");
+   TH1F* hh=new TH1F("Intensity",";Intensity [uJ]",500,100,IsN2?210.:4000);
+
+   int np=0;
+   while(!fin.eof()){
+      char buff[300];
+      double time,luminosity;
+      fin.getline(buff,300);
+      sscanf(buff," %lf %lf",&time,&luminosity);
+      if(!(time>0&&luminosity>0)) continue;
+
+      gr->SetPoint(gr->GetN(),time,luminosity*1.0e6);
+      if(time>1200) hh->Fill(luminosity*1.0e6);
+      printf("np=%d time={%lf,%lf} buff=%s\n",np,time,luminosity,buff);
+      np++;
+   }
+   gr->Draw("ap");
+   //return;
+
+   TCanvas* cc=new TCanvas();
+   cc->Divide(1,2);
+   cc->cd(1);
+   gr->Draw("apl");
+   cc->cd(2);
+   hh->Draw("");
+   hh->Fit("gaus","S+");
+   gPad->SetLogy(1);
+
+   //return;
+   TFile* fout=TFile::Open("Y149_200us_D2_2.root","RECREATE");
+   fout->cd();
+   gr->Write("graph");
+   hh->Write();
+   fout->Close();
+}
+
